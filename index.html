@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공무원 퇴직연금 개시 연령 계산기 | 은퇴준비학교</title>
+    <meta name="description" content="임용 시기와 퇴직 연도에 따른 공무원 퇴직연금 지급 개시 연령을 정확하게 계산해 보세요.">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --secondary: #4f46e5;
+            --background: #0f172a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: radial-gradient(circle at top left, #1e1b4b, #0f172a);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1), transparent 70%);
+            z-index: -1;
+            filter: blur(80px);
+            animation: pulse 15s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: translate(-10%, -10%) scale(1);
+            }
+
+            100% {
+                transform: translate(10%, 10%) scale(1.1);
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 550px;
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: var(--transition);
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 2.2rem;
+            text-align: center;
+            margin-bottom: 35px;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            margin-left: 4px;
+        }
+
+        input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 14px 20px;
+            color: var(--text);
+            font-size: 1rem;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 16px;
+            padding: 18px;
+            color: white;
+            font-size: 1.15rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 10px;
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 30px -10px rgba(99, 102, 241, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #result {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid var(--glass-border);
+            display: none;
+            animation: slideUp 0.5s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-item {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--success);
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.2;
+        }
+
+        .info-box {
+            background: rgba(99, 102, 241, 0.08);
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #e2e8f0;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .footer a {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .card {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .result-value {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-glow" style="top: -10%; left: -10%;"></div>
+    <div class="bg-glow"
+        style="bottom: -10%; right: -10%; background: radial-gradient(circle, rgba(192, 132, 252, 0.08), transparent 70%);">
+    </div>
+
+    <main class="container">
+        <article class="card">
+            <h1>공무원 연금 개시 계산기</h1>
+
+            <div class="input-group">
+                <label for="birthDate">생년월일</label>
+                <input type="date" id="birthDate" value="1965-01-01" aria-required="true">
+            </div>
+
+            <div class="input-group">
+                <label for="joinDate">공무원 임용일</label>
+                <input type="date" id="joinDate" value="1990-01-01" aria-required="true">
+            </div>
+
+            <div class="input-group">
+                <label for="retireDate">퇴직 예상 연월일</label>
+                <input type="date" id="retireDate" aria-required="true">
+            </div>
+
+            <button type="button" onclick="calculatePension()">계산 결과 확인</button>
+
+            <section id="result" aria-live="polite">
+                <div class="result-item">
+                    <p class="result-label">✅ 연금지급 개시 연령</p>
+                    <div class="result-value" id="resultAge">- 세</div>
+                </div>
+                <div class="result-item">
+                    <p class="result-label">지급 개시 가능 연월</p>
+                    <div class="result-value" id="resultYear" style="color: var(--text); font-size: 1.7rem;">- 연월</div>
+                </div>
+                <div id="resultDescription" class="info-box"></div>
+            </section>
+
+            <footer class="footer">
+                <p>creator: ⓒ Dunam | <a href="https://cafe.naver.com/retireclass" target="_blank"
+                        rel="noopener">cafe.naver.com/retireclass</a></p>
+                <p>본 프로그램은 자유롭게 사용 및 배포가 가능합니다.</p>
+            </footer>
+        </article>
+    </main>
+
+    <script>
+        /**
+         * 초기 설정: 퇴직예상일의 최소값을 오늘로 제한
+         */
+        (function init() {
+            const today = new Date().toISOString().split('T')[0];
+            const retireInput = document.getElementById('retireDate');
+            retireInput.setAttribute('min', today);
+            retireInput.value = today;
+        })();
+
+        /**
+         * 특정 날짜의 다음 달 연월 정보를 객체로 반환
+         */
+        function getNextMonthInfo(date) {
+            const nextDate = new Date(date);
+            nextDate.setMonth(nextDate.getMonth() + 1);
+            return {
+                year: nextDate.getFullYear(),
+                month: nextDate.getMonth() + 1
+            };
+        }
+
+        /**
+         * 퇴직연금 지급 개시 시점 계산 메인 함수
+         */
+        function calculatePension() {
+            // 입력값 취득
+            const birthValue = document.getElementById('birthDate').value;
+            const joinValue = document.getElementById('joinDate').value;
+            const retireValue = document.getElementById('retireDate').value;
+
+            if (!birthValue || !joinValue || !retireValue) {
+                alert('모든 날짜를 올바르게 입력해주세요.');
+                return;
+            }
+
+            const birthDate = new Date(birthValue);
+            const joinDate = new Date(joinValue);
+            const retireFullDate = new Date(retireValue);
+            const retireYear = retireFullDate.getFullYear();
+
+            // 유효성 검사: 날짜 순서 확인
+            if (joinDate <= birthDate) {
+                alert('임용일은 생년월일보다 늦어야 합니다.');
+                return;
+            }
+            if (retireFullDate <= joinDate) {
+                alert('퇴직일은 임용일보다 늦어야 합니다.');
+                return;
+            }
+
+            const cutoffDate = new Date('1995-12-31');
+            const target2000 = new Date('2000-12-31');
+
+            let pensionAgeLabel = "";
+            let description = "";
+            let targetStartDate = null;
+
+            // --- [Case 1] 1995.12.31 이전 임용자 ---
+            if (joinDate <= cutoffDate) {
+                // 2000.12.31 기준 재직기간(일 단위) 계산
+                const diffTime = target2000 - joinDate;
+                const serviceDaysAt2000 = diffTime / (1000 * 60 * 60 * 24);
+                const serviceYearsAt2000 = serviceDaysAt2000 / 365.25;
+
+                // 2000년 기준 20년 이상 재직 시
+                if (serviceYearsAt2000 >= 20) {
+                    pensionAgeLabel = "퇴직 즉시 충족";
+                    description = "2000년 12월 31일 기준 재직기간이 20년 이상인 공무원으로, 퇴직 후 즉시 연금이 개시됩니다.";
+                    targetStartDate = new Date(retireFullDate); // 이미 충족
+                }
+                else {
+                    // 경과 규정 적용: (A) 재직 20년 도달일 vs (B) 퇴직 연령 도달일 중 빠른 날짜
+                    let ageLimit = 60;
+                    if (retireYear <= 2016) ageLimit = 57;
+                    else if (retireYear <= 2018) ageLimit = 58;
+                    else if (retireYear <= 2020) ageLimit = 59;
+                    else ageLimit = 60;
+
+                    // (A) 재직 20년 도달일
+                    const date20Years = new Date(joinDate);
+                    date20Years.setFullYear(joinDate.getFullYear() + 20);
+
+                    // (B) 연령 도달일 (생일 다음달 1일 기준)
+                    const dateAgeLimit = new Date(birthDate);
+                    dateAgeLimit.setFullYear(birthDate.getFullYear() + ageLimit);
+                    dateAgeLimit.setMonth(dateAgeLimit.getMonth() + 1);
+                    dateAgeLimit.setDate(1);
+
+                    // 결정적 시작일: 가장 빠른 시점
+                    targetStartDate = (date20Years < dateAgeLimit) ? date20Years : dateAgeLimit;
+
+                    if (targetStartDate <= date20Years) {
+                        pensionAgeLabel = "재직 20년 도달";
+                        description = "1995.12.31 이전 임용자로, 연령에 도달하기 전이라도 재직기간 20년을 채우는 시점에 연금 수령이 가능합니다.";
+                    } else {
+                        pensionAgeLabel = ageLimit + " 세";
+                        description = `1995.12.31 이전 임용자이며 2000년 기준 재직기간 20년 미만이므로, 퇴직연도(${retireYear}년) 기준에 따라 ${ageLimit}세에 지급됩니다.`;
+                    }
+                }
+            }
+            // --- [Case 2] 1996.1.1 이후 임용자 ---
+            else {
+                let ageLimit = 65;
+                if (retireYear >= 2016 && retireYear <= 2021) ageLimit = 60;
+                else if (retireYear <= 2023) ageLimit = 61;
+                else if (retireYear <= 2026) ageLimit = 62;
+                else if (retireYear <= 2029) ageLimit = 63;
+                else if (retireYear <= 2032) ageLimit = 64;
+                else ageLimit = 65;
+
+                pensionAgeLabel = ageLimit + " 세";
+                description = `1996.1.1 이후 임용자이므로, 퇴직연도(${retireYear}년) 기준 연령 규정에 따라 ${ageLimit}세부터 지급됩니다.`;
+
+                // 연령 도달 시점 계산
+                targetStartDate = new Date(birthDate);
+                targetStartDate.setFullYear(birthDate.getFullYear() + ageLimit);
+                targetStartDate.setMonth(targetStartDate.getMonth() + 1);
+                targetStartDate.setDate(1);
+            }
+
+            // --- 결과 출력 처리 ---
+            const resultDiv = document.getElementById('result');
+            const resAge = document.getElementById('resultAge');
+            const resYear = document.getElementById('resultYear');
+            const resDesc = document.getElementById('resultDescription');
+
+            resultDiv.style.display = 'block';
+            resAge.textContent = pensionAgeLabel;
+            resDesc.textContent = description;
+
+            // 최종 지급 연월 결정 로직
+            // 퇴직 날짜가 이미 연금 개시 시점보다 늦을 경우 = 퇴직 다음 달
+            if (retireFullDate >= targetStartDate) {
+                const info = getNextMonthInfo(retireFullDate);
+                resYear.textContent = `${info.year}년 ${info.month}월 (퇴직 다음 달)`;
+                resYear.style.color = "var(--success)";
+            }
+            // 아직 수령 연령에 미치지 않은 경우 = 원래 수령 예정 연월
+            else {
+                const info = { year: targetStartDate.getFullYear(), month: targetStartDate.getMonth() + 1 };
+                resYear.textContent = `${info.year}년 ${info.month}월 예상`;
+                resYear.style.color = "var(--text)";
+            }
+
+            // 부드러운 스크롤 이동
+            setTimeout(() => {
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+    </script>
+</body>
+
+</html>
