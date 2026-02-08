@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>공무원 퇴직연금 개시 연령 계산기 | 은퇴준비학교</title>
+    <title>공무원 퇴직연금 개시일 계산기 | 은퇴준비학교</title>
     <meta name="description" content="임용 시기와 퇴직 연도에 따른 공무원 퇴직연금 지급 개시 연령 및 시기를 정밀하게 계산해 보세요.">
     <!-- Google Fonts -->
     <link
@@ -250,6 +250,7 @@
             line-height: 1.7;
             color: #cbd5e1;
             display: flex;
+            align-items: center;
             gap: 14px;
         }
 
@@ -347,7 +348,7 @@
                     </div>
                     <div class="result-card">
                         <div class="result-label">
-                            <i data-lucide="banknote" style="width:16px; color: var(--primary-light);"></i> 실제 수령 예측
+                            <i data-lucide="banknote" style="width:16px; color: var(--primary-light);"></i> 실제 첫 수령
                         </div>
                         <div class="result-value" id="resultYear">-</div>
                     </div>
@@ -368,105 +369,127 @@
     </main>
 
     <script>
-        window.onload = function () { lucide.createIcons(); };
+        // 초기화
+        window.onload = function () {
+            lucide.createIcons();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('retireDate').value = today;
+        };
 
+        // 날짜 표시 변환 함수 (익월 표시)
         function getDisplayYearMonth(date) {
             const d = new Date(date);
+            // 연금은 사유 발생(퇴직 등) 다음 달부터 지급됨
             d.setMonth(d.getMonth() + 1);
             return `${d.getFullYear()}년 ${d.getMonth() + 1}월`;
         }
 
         function calculatePension() {
-            const birthValue = document.getElementById('birthDate').value;
-            const joinValue = document.getElementById('joinDate').value;
-            const retireValue = document.getElementById('retireDate').value;
-            const leavePre2000 = parseInt(document.getElementById('leavePre2000').value) || 0;
-            const leavePost2001 = parseInt(document.getElementById('leavePost2001').value) || 0;
+            // DOM 스캔 최소화
+            const elements = {
+                birth: document.getElementById('birthDate').value,
+                join: document.getElementById('joinDate').value,
+                retire: document.getElementById('retireDate').value,
+                leavePre: parseInt(document.getElementById('leavePre2000').value) || 0,
+                leavePost: parseInt(document.getElementById('leavePost2001').value) || 0,
+                resultArea: document.getElementById('result'),
+                ageDisplay: document.getElementById('resultAge'),
+                yearDisplay: document.getElementById('resultYear'),
+                descDisplay: document.getElementById('resultDescription')
+            };
 
-            if (!birthValue || !joinValue || !retireValue) {
-                alert('모든 날짜를 올바르게 입력해주세요.');
-                return;
+            if (!elements.birth || !elements.join || !elements.retire) {
+                return alert('모든 날짜를 올바르게 입력해주세요.');
             }
 
-            const birthDate = new Date(birthValue);
-            const joinDate = new Date(joinValue);
-            const retireDate = new Date(retireValue);
+            const birthDate = new Date(elements.birth);
+            const joinDate = new Date(elements.join);
+            const retireDate = new Date(elements.retire);
             const retireYear = retireDate.getFullYear();
+
+            // 윤년을 고려한 평균 한 달 밀리초
             const avgMonthMs = 30.4375 * 24 * 3600 * 1000;
 
+            // 기본 유효성 검사
             if (joinDate <= birthDate) return alert('임용일은 생년월일보다 늦어야 합니다.');
             if (retireDate <= joinDate) return alert('퇴직일은 임용일보다 늦어야 합니다.');
 
-            const cutoffDate = new Date('1995-12-31');
-            const target2000 = new Date('2000-12-31');
-            const eligibility2016 = new Date('2016-01-01');
+            // 기준 일자 상수화
+            const DATES = {
+                CUTOFF: new Date('1995-12-31'),
+                TARGET_2000: new Date('2000-12-31'),
+                ELIGIBILITY_2016: new Date('2016-01-01'),
+                REFORM_2001: new Date('2001-01-01')
+            };
 
-            const totalLeaveMonths = leavePre2000 + leavePost2001;
-            const totalServiceMs = retireDate - joinDate - (totalLeaveMonths * avgMonthMs);
-            const totalServiceYears = totalServiceMs / (1000 * 60 * 60 * 24 * 365.25);
-
-            let requiredYears = (retireDate < eligibility2016) ? 20 : 10;
+            // 1. 수급 자격 기간 판정 (휴직 제외 실근무)
+            const totalLeaveMs = (elements.leavePre + elements.leavePost) * avgMonthMs;
+            const totalServiceYears = (retireDate - joinDate - totalLeaveMs) / (1000 * 60 * 60 * 24 * 365.25);
+            const requiredYears = (retireDate < DATES.ELIGIBILITY_2016) ? 20 : 10;
 
             if (totalServiceYears < requiredYears) {
-                document.getElementById('result').style.display = 'block';
-                document.getElementById('resultAge').textContent = "자격 미달";
-                document.getElementById('resultYear').textContent = "-";
-                document.getElementById('resultDescription').innerHTML =
-                    `<span style="color: var(--error); font-weight: bold;">[수급 자격 부족]</span><br>` +
-                    `${retireDate.getFullYear()}년 퇴직 시 최소 ${requiredYears}년 이상 근무해야 하나, ` +
-                    `현재 실근무 기간(휴직 제외)은 약 ${totalServiceYears.toFixed(1)}년입니다.`;
+                elements.resultArea.style.display = 'block';
+                elements.ageDisplay.textContent = "자격 미달";
+                elements.yearDisplay.textContent = "-";
+                elements.descDisplay.innerHTML = `<span style="color: var(--error); font-weight: 700;">[수급 자격 부족]</span><br>${retireYear}년 퇴직 시 최소 ${requiredYears}년 근무가 필요하나, 실근무 기간은 약 ${totalServiceYears.toFixed(1)}년입니다.`;
                 return;
             }
 
-            let targetStartDate = null;
+            let startQualificationDate = null;
             let description = "";
 
-            if (joinDate <= cutoffDate) {
-                const calendarMsAt2000 = target2000 - joinDate;
-                const actualMsAt2000 = calendarMsAt2000 - (leavePre2000 * avgMonthMs);
-                const yearsAt2000 = actualMsAt2000 / (1000 * 60 * 60 * 24 * 365.25);
+            // 2. 연금 개시 시점 계산 logic
+            if (joinDate <= DATES.CUTOFF) {
+                // 1996년 이전 임용자 (특례 대상)
+                const msAt2000 = (DATES.TARGET_2000 - joinDate) - (elements.leavePre * avgMonthMs);
+                const yearsAt2000 = msAt2000 / (1000 * 60 * 60 * 24 * 365.25);
 
                 if (yearsAt2000 >= 20) {
-                    targetStartDate = target2000;
-                    description = "2000년 말 기준 재직 20년 이상(휴직 제외)으로 이미 수급 자격을 확보하셨습니다.";
+                    startQualificationDate = DATES.TARGET_2000;
+                    description = "2000년 말 기준 재직 20년 이상으로 이미 수급 자격을 확보하셨습니다.";
                 } else {
+                    // 정규 연령 제한 결정
                     let ageLimit = 60;
                     if (retireYear <= 2016) ageLimit = 57;
                     else if (retireYear <= 2018) ageLimit = 58;
                     else if (retireYear <= 2020) ageLimit = 59;
 
-                    const dateAgeLimit = new Date(birthDate);
-                    dateAgeLimit.setFullYear(birthDate.getFullYear() + ageLimit);
+                    const dateAgeBound = new Date(birthDate);
+                    dateAgeBound.setFullYear(birthDate.getFullYear() + ageLimit);
 
+                    // 특례 날짜 계산: 2001.01.01 + (부족기간 * 2) + 이후 휴직
                     const ms20Years = 20 * 365.25 * 24 * 60 * 60 * 1000;
-                    const gapMs = ms20Years - actualMsAt2000;
-                    const dateGapComp = new Date(new Date('2001-01-01').getTime() + (gapMs * 2) + (leavePost2001 * avgMonthMs));
+                    const gapMs = ms20Years - msAt2000;
+                    const dateSpecialComp = new Date(DATES.REFORM_2001.getTime() + (gapMs * 2) + (elements.leavePost * avgMonthMs));
 
-                    targetStartDate = (dateGapComp < dateAgeLimit) ? dateGapComp : dateAgeLimit;
-                    description = targetStartDate === dateGapComp ? "특례 조건에 따라 조기 수급 자격이 발생합니다." : `퇴직 연도 기준 ${ageLimit}세 도달 시점에 수령합니다.`;
+                    startQualificationDate = (dateSpecialComp < dateAgeBound) ? dateSpecialComp : dateAgeBound;
+                    description = (startQualificationDate === dateSpecialComp) ? "특례 조건에 따라 조기 수급 자격이 발생합니다." : `퇴직 연도 기준 ${ageLimit}세 도달 시점에 자격이 발생합니다.`;
                 }
             } else {
+                // 1996년 이후 임용자 (단계별 연령 상향)
                 let ageLimit = 65;
-                if (retireYear >= 2024 && retireYear <= 2026) ageLimit = 62;
-                else if (retireYear >= 2027 && retireYear <= 2029) ageLimit = 63;
-                else if (retireYear >= 2030 && retireYear <= 2032) ageLimit = 64;
-                else if (retireYear <= 2021) ageLimit = 60;
+                if (retireYear <= 2021) ageLimit = 60;
                 else if (retireYear <= 2023) ageLimit = 61;
+                else if (retireYear <= 2026) ageLimit = 62;
+                else if (retireYear <= 2029) ageLimit = 63;
+                else if (retireYear <= 2032) ageLimit = 64;
 
-                const dateAgeLimit = new Date(birthDate);
-                dateAgeLimit.setFullYear(birthDate.getFullYear() + ageLimit);
-                targetStartDate = dateAgeLimit;
-                description = `퇴직 연도 기준 ${ageLimit}세 도달 시점에 수령합니다.`;
+                const dateAgeBound = new Date(birthDate);
+                dateAgeBound.setFullYear(birthDate.getFullYear() + ageLimit);
+                startQualificationDate = dateAgeBound;
+                description = `퇴직 연도 기준 개시 연령 ${ageLimit}세 도달 시점에 수령 자격이 발생합니다.`;
             }
 
-            document.getElementById('result').style.display = 'block';
-            const actualStart = (retireDate.getTime() > targetStartDate.getTime()) ? retireDate : targetStartDate;
+            // 3. 최종 출력 (자격 시점 vs 퇴직 시점 중 늦은 날짜)
+            elements.resultArea.style.display = 'block';
+            const finalStartDate = (retireDate.getTime() > startQualificationDate.getTime()) ? retireDate : startQualificationDate;
 
-            document.getElementById('resultAge').textContent = getDisplayYearMonth(targetStartDate);
-            document.getElementById('resultYear').textContent = getDisplayYearMonth(actualStart);
-            document.getElementById('resultDescription').textContent = description;
+            elements.ageDisplay.textContent = getDisplayYearMonth(startQualificationDate);
+            elements.yearDisplay.textContent = getDisplayYearMonth(finalStartDate);
+            elements.descDisplay.textContent = description;
 
-            setTimeout(() => document.getElementById('result').scrollIntoView({ behavior: 'smooth' }), 100);
+            // 결과 화면으로 부드럽게 스크롤
+            setTimeout(() => elements.resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
         }
     </script>
 </body>
